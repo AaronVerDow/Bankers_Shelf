@@ -27,7 +27,7 @@ function segment_radius(height, chord) = (height/2)+(chord*chord)/(8*height);
 // https://www.amazon.com/Pieces-Premium-Cedar-Wood-Shims/dp/B07V9PLBZM/
 shim_x=1/4*in;
 shim_y=(1+7/16)*in;
-shim_z=8.75*in;
+shim_z=8.75*in/2;
 
 // extra on the bottom
 stabilizer=2*in;
@@ -64,14 +64,62 @@ room_height=76*in;
 room_width=20*12*in;
 
 
+module connector() {
+    tab_h=height(puzzle_width,puzzle_step,puzzle_minimum);
+    x=cubby_x-shelf_ends*2+tab_h*2;
+    y=shelf_y;
+    difference() {
+        square([x,y],center=true);
+
+
+        dirror_x()
+        translate([-x/2,0,0])
+        rotate([0,0,90])
+        negative_puzzle_tab(puzzle_width,puzzle_minimum,puzzle_step,puzzle_step-puzzle_gap,fn=puzzle_fn);
+    }
+}
+
+module connector_pocket() {
+    tab_h=height(puzzle_width,puzzle_step,puzzle_minimum);
+    x=cubby_x-shelf_ends*2+tab_h*2;
+    dirror_x()
+    translate([-x/2,0,0])
+    rotate([0,0,90])
+    negative_puzzle_tab(puzzle_width,puzzle_minimum,puzzle_step,-puzzle_gap,fn=puzzle_fn);
+}
+
+
+module connector_3d() {
+    difference() {
+        wood()
+        connector();
+        translate([0,0,-wood/2])
+        wood()connector_pocket();
+    }
+}
+
+connector_3d();
+
+// PREVIEW
+// RENDER scad
 module room() {
     translate([0,cubby_z,0])
     rotate([90,0,0])
     square([room_width,room_height]);
 
-    for(x=[0:shelf_x+cubby_x-shelf_ends*2:room_width-cubby_x-shelf_ends])
+    unit=shelf_x+cubby_x-shelf_ends*2;
+        
+    for(x=[0:unit:room_width-cubby_x-shelf_ends])
     translate([x+shelf_ends+cubby_x/2+wood,0,0])
     preview();
+
+    for(x=[0:shelf_x+cubby_x-shelf_ends*2:room_width-cubby_x-shelf_ends])
+    translate([x+shelf_ends-cubby_x/2,0,0])
+    for(row=[0:1:rows-1])
+    translate([0,0,(cubby_z+wood)*row+extra_bottom+wood])
+    dirror_y()
+    translate([0,cubby_y/2-shelf_y/2,-wood/2])
+    connector_3d();
 }
 
 // PREVIEW
@@ -261,6 +309,7 @@ puzzle_width=shelf_y;
 puzzle_minimum=bit*1.5;
 puzzle_step=wood;
 puzzle_fn=20;
+puzzle_gap=bit/2;
 
 module shelf() {
     radius=segment_radius(shelf_cut,cubby_x-shim_target*2);
@@ -317,8 +366,13 @@ module shelves() {
     translate([0,0,(cubby_z+wood)*row+extra_bottom+wood])
     dirror_y()
     translate([shelf_x/2-cubby_x/2-wood-shelf_ends,cubby_y/2-shelf_y/2,-wood/2])
-    wood()
-    shelf();
+    difference() {
+        wood()
+        shelf();
+        translate([0,0,wood/2])
+        wood()
+        shelf_pocket();
+    }
 }
 
 side_cut=shelf_y;
@@ -372,7 +426,7 @@ module vr() {
 
 //shelf();
 
-shelf_cutsheet();
+//shelf_cutsheet();
 
 display="";
 //if(display=="") shim();
