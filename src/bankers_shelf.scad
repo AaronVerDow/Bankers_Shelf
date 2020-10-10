@@ -23,7 +23,6 @@ big_fn=90;
 
 function segment_radius(height, chord) = (height/2)+(chord*chord)/(8*height);
 
-
 // https://www.amazon.com/Pieces-Premium-Cedar-Wood-Shims/dp/B07V9PLBZM/
 shim_x=1/4*in;
 shim_y=(1+7/16)*in;
@@ -56,12 +55,14 @@ side_y=(cubby_z+wood)*(rows-1)+extra_top+extra_bottom+wood;
 
 echo(side_y/in);
 
-
 shelf_x=wood+(cubby_x+wood)*columns+shelf_ends*2;
 shelf_y=cubby_y/3;
 
 room_height=76*in;
 room_width=20*12*in;
+
+unit=shelf_x+cubby_x-shelf_ends*2;
+room_end=(room_width-unit*3+cubby_x-shelf_ends*2)/2;
 
 
 module connector() {
@@ -78,6 +79,48 @@ module connector() {
         negative_puzzle_tab(puzzle_width,puzzle_minimum,puzzle_step,puzzle_step-puzzle_gap,fn=puzzle_fn);
     }
 }
+
+module end_connector() {
+    tab_h=height(puzzle_width,puzzle_step,puzzle_minimum);
+    x=room_end+tab_h;
+    y=shelf_y;
+    translate([x/2,0])
+    mirror([1,0])
+    difference() {
+        square([x,y],center=true);
+        translate([-x/2,0,0])
+        rotate([0,0,90])
+        negative_puzzle_tab(puzzle_width,puzzle_minimum,puzzle_step,puzzle_step-puzzle_gap,fn=puzzle_fn);
+        translate([x/2,-y/2,0])
+        mirror([1,0,0])
+        negative_pins(y,wood,1,joint_gap,0,bit,0);
+    }
+}
+
+module end_connector_3d() {
+    difference() {
+        wood()
+        end_connector();
+        translate([0,0,-wood/2])
+        wood()end_connector_pocket();
+    }
+}
+
+end_connector_pocket();
+
+module end_connector_pocket() {
+    tab_h=height(puzzle_width,puzzle_step,puzzle_minimum);
+    x=room_end+tab_h;
+    mirror([1,0])
+    translate([-x,0,0])
+    rotate([0,0,90]) {
+    //negative_puzzle_tab(puzzle_width,puzzle_minimum,puzzle_step,-puzzle_gap,fn=puzzle_fn);
+        //color("lime")
+        translate([0,-tab_h,0])
+        negative_puzzle_blank_step(puzzle_width,puzzle_minimum,puzzle_step,puzzle_step,fn=puzzle_fn,bit=bit/2);
+    }
+}
+
 
 module connector_pocket() {
     tab_h=height(puzzle_width,puzzle_step,puzzle_minimum);
@@ -98,7 +141,20 @@ module connector_3d() {
     }
 }
 
-connector_3d();
+module room_end() {
+    translate([wood/2,0,side_y/2])
+    rotate([90,0,90])
+    wood()
+    side(false);
+
+    color("maroon")
+    for(row=[0:1:rows-1])
+    translate([0,0,(cubby_z+wood)*row+extra_bottom+wood])
+    dirror_y()
+    translate([0,cubby_y/2-shelf_y/2,-wood/2])
+    end_connector_3d();
+}
+
 
 // PREVIEW
 // RENDER scad
@@ -107,24 +163,31 @@ module room() {
     rotate([90,0,0])
     square([room_width,room_height]);
 
-    unit=shelf_x+cubby_x-shelf_ends*2;
-        
-    for(x=[0:unit:room_width-cubby_x-shelf_ends])
-    translate([x+shelf_ends+cubby_x/2+wood,0,0])
-    preview();
+    dirror_x(room_width)
+    room_end();
 
-    for(x=[0:shelf_x+cubby_x-shelf_ends*2:room_width-cubby_x-shelf_ends])
-    translate([x+shelf_ends-cubby_x/2,0,0])
-    for(row=[0:1:rows-1])
-    translate([0,0,(cubby_z+wood)*row+extra_bottom+wood])
-    dirror_y()
-    translate([0,cubby_y/2-shelf_y/2,-wood/2])
-    connector_3d();
+    //translate([box_x/2,0,0]) box();
+        
+    translate([room_width/2-unit*1.5+shelf_ends/2,0,0]) {
+        for(x=[0:unit:room_width-cubby_x-shelf_ends])
+        translate([x+shelf_ends+cubby_x/2+wood,0,0])
+        preview();
+
+        for(x=[ shelf_x+cubby_x-shelf_ends*2 :shelf_x+cubby_x-shelf_ends*2:room_width-cubby_x-shelf_ends])
+        translate([x+shelf_ends-cubby_x/2,0,0])
+        for(row=[0:1:rows-1])
+        translate([0,0,(cubby_z+wood)*row+extra_bottom+wood])
+        dirror_y()
+        translate([0,cubby_y/2-shelf_y/2,-wood/2])
+        connector_3d();
+    }
 }
 
 // PREVIEW
 // RENDER scad
 module cutsheets() {
+    end_cutsheet()
+    end_cutsheet(display="pocket")
     side_cutsheet()
     shelf_cutsheet()
     shelf_cutsheet(display="pocket");
@@ -174,6 +237,58 @@ module shelf_cutsheet(display="profile") {
 }
 
 // RENDER svg
+module end_cutsheet(display="profile") {
+    columns=1;
+    less_gap=90;
+    gap=side_x+cut_gap-less_gap;
+    max=cut_gap*columns+side_x*columns+side_x-less_gap*columns-less_gap;
+    //translate([-10*in,0]) plywood();
+
+    color("lime")
+    dirror_y(plywood_y)
+    dirror_x(shelf_x+cubby_x/2+shelf_ends/2+cut_gap)
+    translate([-cut_gap,2*in])
+    circle(d=anchor);
+
+    if (display=="profile") {
+        rotate([0,0,90])
+        for(x=[0:gap*2:max])
+        translate([side_x/2+x+(plywood_y-max)/2-less_gap/2,-side_y/2])
+        mirror([0,1])
+        side(false);
+
+        rotate([0,0,90])
+        for(x=[gap:gap*2:max])
+        translate([side_x/2+x+(plywood_y-max)/2-less_gap/2,-side_y/2-cubby_x/2-extra_top/2-wood/2])
+        side(false);
+    }
+
+    end_gap=shelf_y+cut_gap*5;
+    ends=10;
+    module end_connectors_sheet() {
+        for(x=[0:end_gap:end_gap*ends-10])
+        translate([x-end_gap*ends/2+end_gap/2+side_y/2+gap/2,plywood_y/2-max-less_gap])
+        rotate([0,0,40])
+        if (display=="profile") {
+        end_connector();
+        } else if (display=="pocket") {
+            end_connector_pocket();
+        }
+    }
+
+    end_connectors_sheet();
+    translate([shelf_x+cubby_x/2+shelf_ends/2,0])
+    mirror([1,0])
+    translate([0,plywood_y])
+    mirror([0,1])
+    end_connectors_sheet();
+
+    translate([0,plywood_y*1.2])
+    children();
+}
+
+
+// RENDER svg
 module side_cutsheet() {
     less_gap=90;
     gap=side_x+cut_gap-less_gap;
@@ -202,7 +317,7 @@ module pockets() {
 }
 
 module plywood() {
-    //translate([0,0,-1]) #square([plywood_x,plywood_y]);
+    #translate([0,0,-1]) #square([plywood_x,plywood_y]);
 }
 
 // RDR obj
@@ -377,7 +492,11 @@ module shelves() {
 
 side_cut=shelf_y;
 
-module side() {
+end_holes=bit*1.2;
+joint_gap=bit/8;
+
+
+module side(slots=true) {
     radius=segment_radius(side_cut, cubby_z);
     slot_x=shelf_y+pad+shelf_x_gap-shim_grip;
     slot_y=wood+shelf_y_gap;
@@ -393,7 +512,11 @@ module side() {
         translate([slot_x,0])
         rotate([0,0,90])
         dirror_x(slot_y)
-        negative_slot(slot_x,slot_y,bit,0);
+        if(slots) {
+            negative_slot(slot_x,slot_y,bit,0);
+        } else {
+            negative_tails(shelf_y,wood,1,joint_gap,end_holes,bit,0);
+        }
 
         dirror_x()
         for(y=[0:cubby_z+wood:side_y-extra_top-extra_bottom-wood*2])
