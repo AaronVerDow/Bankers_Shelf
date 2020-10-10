@@ -147,7 +147,7 @@ module room_end() {
     wood()
     side(false);
 
-    color("maroon")
+    color("lime")
     for(row=[0:1:rows-1])
     translate([0,0,(cubby_z+wood)*row+extra_bottom+wood])
     dirror_y()
@@ -173,6 +173,7 @@ module room() {
         translate([x+shelf_ends+cubby_x/2+wood,0,0])
         preview();
 
+        color("lime")
         for(x=[ shelf_x+cubby_x-shelf_ends*2 :shelf_x+cubby_x-shelf_ends*2:room_width-cubby_x-shelf_ends])
         translate([x+shelf_ends-cubby_x/2,0,0])
         for(row=[0:1:rows-1])
@@ -287,6 +288,10 @@ module end_cutsheet(display="profile") {
     children();
 }
 
+// RENDER svg
+module end_cutsheet_pockets() {
+    end_cutsheet("pocket");
+}
 
 // RENDER svg
 module side_cutsheet() {
