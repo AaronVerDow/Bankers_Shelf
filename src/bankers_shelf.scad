@@ -7,6 +7,7 @@ box_z=10.5*in;
 lid=0.25*in;
 lid_h=2.5*in;
 
+show_plywood=0;  // change to 1 to show plywood in cutsheet views
 plywood_x=8*12*in;
 plywood_y=4*12*in;
 
@@ -64,6 +65,19 @@ room_width=20*12*in;
 unit=shelf_x+cubby_x-shelf_ends*2;
 room_end=(room_width-unit*3+cubby_x-shelf_ends*2)/2;
 
+side_cut=shelf_y;
+end_holes=bit*1.2;
+joint_gap=bit/8;
+
+anchor=bit*1.2;
+
+shelf_cut=shim_grip;
+
+puzzle_width=shelf_y;
+puzzle_minimum=bit*1.5;
+puzzle_step=wood;
+puzzle_fn=20;
+puzzle_gap=bit/2;
 
 module connector() {
     tab_h=height(puzzle_width,puzzle_step,puzzle_minimum);
@@ -106,8 +120,6 @@ module end_connector_3d() {
     }
 }
 
-end_connector_pocket();
-
 module end_connector_pocket() {
     tab_h=height(puzzle_width,puzzle_step,puzzle_minimum);
     x=room_end+tab_h;
@@ -121,7 +133,6 @@ module end_connector_pocket() {
     }
 }
 
-
 module connector_pocket() {
     tab_h=height(puzzle_width,puzzle_step,puzzle_minimum);
     x=cubby_x-shelf_ends*2+tab_h*2;
@@ -130,7 +141,6 @@ module connector_pocket() {
     rotate([0,0,90])
     negative_puzzle_tab(puzzle_width,puzzle_minimum,puzzle_step,-puzzle_gap,fn=puzzle_fn);
 }
-
 
 module connector_3d() {
     difference() {
@@ -155,9 +165,9 @@ module room_end() {
     end_connector_3d();
 }
 
-
 // PREVIEW
 // RENDER scad
+// RENDER png
 module room() {
     translate([0,cubby_z,0])
     rotate([90,0,0])
@@ -186,12 +196,13 @@ module room() {
 
 // PREVIEW
 // RENDER scad
+// RENDER png --camera=0,0,0,0,0,0,0
 module cutsheets() {
     end_cutsheet()
-    end_cutsheet(display="pocket")
+    end_cutsheet_pockets()
     side_cutsheet()
     shelf_cutsheet()
-    shelf_cutsheet(display="pocket");
+    shelf_cutsheet_pockets();
 }
 
 module if_color(_color) {
@@ -199,8 +210,6 @@ module if_color(_color) {
     color(_color)
     children();
 }
-
-anchor=bit*1.2;
 
 // RENDER svg
 module shelf_cutsheet(display="profile") {
@@ -215,7 +224,6 @@ module shelf_cutsheet(display="profile") {
     } else if (display=="pocket") {
         shelf_pocket();
     }
-
 
     for(y=[gap:gap*2:max])
     translate([shelf_x/2+cubby_x/2+shelf_ends/2,shelf_y/2+y+(plywood_y-max)/2+17])
@@ -290,7 +298,14 @@ module end_cutsheet(display="profile") {
 
 // RENDER svg
 module end_cutsheet_pockets() {
-    end_cutsheet("pocket");
+    end_cutsheet("pocket")
+    children();
+}
+
+// RENDER svg
+module shelf_cutsheet_pockets() {
+    shelf_cutsheet("pocket")
+    children();
 }
 
 // RENDER svg
@@ -322,7 +337,9 @@ module pockets() {
 }
 
 module plywood() {
-    #translate([0,0,-1]) #square([plywood_x,plywood_y]);
+    if(show_plywood)
+    translate([0,0,-1])
+    #square([plywood_x,plywood_y]);
 }
 
 // RDR obj
@@ -422,15 +439,6 @@ module boxes() {
     }
 }
 
-
-shelf_cut=shim_grip;
-
-puzzle_width=shelf_y;
-puzzle_minimum=bit*1.5;
-puzzle_step=wood;
-puzzle_fn=20;
-puzzle_gap=bit/2;
-
 module shelf() {
     radius=segment_radius(shelf_cut,cubby_x-shim_target*2);
     slot_x=wood+shim_target*2;
@@ -480,12 +488,7 @@ module dirror_y(y=0) {
     children();
 }
 
-
-module shelves() {
-    for(row=[0:1:rows-1])
-    translate([0,0,(cubby_z+wood)*row+extra_bottom+wood])
-    dirror_y()
-    translate([shelf_x/2-cubby_x/2-wood-shelf_ends,cubby_y/2-shelf_y/2,-wood/2])
+module shelf_3d() {
     difference() {
         wood()
         shelf();
@@ -495,11 +498,14 @@ module shelves() {
     }
 }
 
-side_cut=shelf_y;
 
-end_holes=bit*1.2;
-joint_gap=bit/8;
-
+module shelves() {
+    for(row=[0:1:rows-1])
+    translate([0,0,(cubby_z+wood)*row+extra_bottom+wood])
+    dirror_y()
+    translate([shelf_x/2-cubby_x/2-wood-shelf_ends,cubby_y/2-shelf_y/2,-wood/2])
+    shelf_3d();
+}
 
 module side(slots=true) {
     radius=segment_radius(side_cut, cubby_z);
@@ -549,18 +555,29 @@ module vr() {
     children();
 }
 
+// PREVIEWS
 
-//assembled();
+room();
+// preview();
+// assembled(); 
+// assembled_with_shims(); 
+// cutsheets();
 
-//shelf();
+// PARTS
 
-//shelf_cutsheet();
+// shelf(); 
+// shelf_3d();
+// side();
+// side(false);
+// end_connector();
+// end_connector_3d();
+// connector();
+// connector_3d();
 
-display="";
-//if(display=="") shim();
-if(display=="bankers_shelf_assembled.stl") vr() assembled();
-if(display=="bankers_shelf_box.stl") vr() box();
-if(display=="bankers_shelf_side.stl") vr() wood() side();
-if(display=="bankers_shelf_shelf.stl") vr() wood() shelf();
-if(display=="bankers_shelf_box.stl") vr() box();
-if(display=="bankers_shelf_shim.stl") vr() shim();
+// CUTSHEETS (use these to export and cut)
+
+// shelf_cutsheet();
+// shelf_cutsheet_pockets();
+// side_cutsheet();
+// end_cutsheet();
+// end_cutsheet_pockets();
